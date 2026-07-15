@@ -1,0 +1,42 @@
+{
+  "site": {
+    "title": "AI Hub Kit",
+    "subtitle": "探索 AI 的无限可能，从这里开始。"
+  },
+  "products": [
+    {
+      "id": "model",
+      "name": "ZMode",
+      "description": "统一 AI API 网关与管理面板。通过标准接口协议接入海量大模型，高效管理 Token 与数字资产，为 AI 应用提供稳定可靠的模型调用服务。",
+      "url": "https://model.aihubkit.com",
+      "icon": "https://cdn.aihubkit.com/zmodel_logo.png",
+      "category": "API 服务",
+      "tags": [
+        "API 网关",
+        "Token 管理",
+        "多模型",
+        "OpenAI 兼容"
+      ],
+      "color": "#4f6ef7",
+      "glow": "#4f6ef7",
+      "badge": "API"
+    },
+    {
+      "id": "magic",
+      "name": "Magic Chat",
+      "description": "智能 AI 对话助手。像变魔术一样处理你的内容——链接解析、图片视频去水印、AI 生图、AI 画布与生视频，一站完成日常创作。",
+      "url": "https://magic.aihubkit.com",
+      "icon": "https://magic.aihubkit.com/logo.png",
+      "category": "AI 工具",
+      "tags": [
+        "AI 对话",
+        "去水印",
+        "AI 生图",
+        "AI 生视频"
+      ],
+      "color": "#a855f7",
+      "glow": "#f97316",
+      "badge": "NEW"
+    }
+  ]
+}
