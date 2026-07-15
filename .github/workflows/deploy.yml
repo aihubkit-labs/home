@@ -26,6 +26,11 @@ jobs:
           echo "value=$VERSION" >> $GITHUB_OUTPUT
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
+      # ── Prepare files (exclude .git) ─────────────────────────
+      - name: Prepare deploy files
+        run: |
+          rsync -a --exclude='.git' . ./deploy-artifacts/
+
       # ── Deploy ────────────────────────────────────────────────
       - name: Copy files to server
         uses: appleboy/scp-action@v0.1.7
@@ -34,9 +39,10 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: 22
-          source: "."
+          source: "deploy-artifacts/*"
           target: ${{ env.DEPLOY_PATH }}
           overwrite: true
+          strip_components: 1
 
       # ── Summary ──────────────────────────────────────────────
       - name: Summary
