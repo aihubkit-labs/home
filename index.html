@@ -485,8 +485,7 @@
       /* ──── 主题 ──── */
       const themeToggle = $("#themeToggle");
       const savedTheme = localStorage.getItem("nav-theme");
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const initTheme = savedTheme || (prefersDark ? "dark" : "light");
+      const initTheme = savedTheme || "light";
       document.documentElement.setAttribute("data-theme", initTheme);
 
       themeToggle.addEventListener("click", () => {
