@@ -6,7 +6,7 @@
   "products": [
     {
       "id": "model",
-      "name": "ZMode",
+      "name": "ZModel",
       "description": "统一 AI API 网关与管理面板。通过标准接口协议接入海量大模型，高效管理 Token 与数字资产，为 AI 应用提供稳定可靠的模型调用服务。",
       "url": "https://model.aihubkit.com",
       "icon": "https://cdn.aihubkit.com/zmodel_logo.png",
