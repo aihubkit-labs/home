@@ -34,7 +34,7 @@ python3 -m http.server 8080
 open http://localhost:8080
 ```
 
-> ⚠️ 不能直接双击打开 HTML（`file://` 协议下浏览器会拦截 `fetch` 读取 JSON）。
+> 直接双击打开 HTML 时，浏览器会拦截 `fetch` 读取 JSON，页面会自动显示内置数据快照；如需读取最新的 `products.json`，请通过本地服务访问。
 
 ## ✏️ 维护产品数据
 

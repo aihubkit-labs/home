@@ -474,6 +474,45 @@
 
   </main>
 
+  <!--
+    首屏兜底数据：线上静态资源短暂不可用时仍可渲染导航。
+    products.json 是主要维护入口，更新产品后请同步更新这里的数据。
+  -->
+  <script id="productDataFallback" type="application/json">
+    {
+      "site": {
+        "title": "AI Hub Kit",
+        "subtitle": "探索 AI 的无限可能，从这里开始。"
+      },
+      "products": [
+        {
+          "id": "model",
+          "name": "ZModel",
+          "description": "统一 AI API 网关与管理面板。通过标准接口协议接入海量大模型，高效管理 Token 与数字资产，为 AI 应用提供稳定可靠的模型调用服务。",
+          "url": "https://model.aihubkit.com",
+          "icon": "https://cdn.aihubkit.com/zmodel_logo.png",
+          "category": "API 服务",
+          "tags": ["API 网关", "Token 管理", "多模型", "OpenAI 兼容"],
+          "color": "#4f6ef7",
+          "glow": "#4f6ef7",
+          "badge": "API"
+        },
+        {
+          "id": "magic",
+          "name": "Magic Chat",
+          "description": "智能 AI 对话助手。像变魔术一样处理你的内容——链接解析、图片视频去水印、AI 生图、AI 画布与生视频，一站完成日常创作。",
+          "url": "https://magic.aihubkit.com",
+          "icon": "https://magic.aihubkit.com/logo.png",
+          "category": "AI 工具",
+          "tags": ["AI 对话", "去水印", "AI 生图", "AI 生视频"],
+          "color": "#a855f7",
+          "glow": "#f97316",
+          "badge": "NEW"
+        }
+      ]
+    }
+  </script>
+
   <script>
     (function () {
       "use strict";
@@ -481,7 +520,10 @@
       const $ = (s) => document.querySelector(s);
       const container = $("#container");
 
-      let DATA = { site: {}, products: [] };
+      const fallbackData = readFallbackData();
+      let DATA = fallbackData || { site: {}, products: [] };
+      let fallbackNotice = null;
+      let hasRendered = false;
 
       /* ──── 主题 ──── */
       const themeToggle = $("#themeToggle");
@@ -505,6 +547,85 @@
 
       function isImg(icon) {
         return /\.(png|jpe?g|svg|gif|webp|ico)$/i.test(icon);
+      }
+
+      function readFallbackData() {
+        try {
+          var node = document.getElementById("productDataFallback");
+          if (!node) return null;
+          var data = JSON.parse(node.textContent);
+          return data && Array.isArray(data.products) ? data : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function sleep(ms) {
+        return new Promise(function(resolve) { setTimeout(resolve, ms); });
+      }
+
+      async function loadData() {
+        var url = new URL("products.json", document.baseURI);
+        var lastError;
+
+        for (var attempt = 0; attempt < 3; attempt++) {
+          var controller = new AbortController();
+          var timeout = setTimeout(function() { controller.abort(); }, 8000);
+          try {
+            var res = await fetch(url.href, { cache: "no-store", signal: controller.signal });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            var data = await res.json();
+            if (!data || !Array.isArray(data.products)) throw new Error("Invalid products data");
+            return { data: data, fallback: false };
+          } catch (e) {
+            lastError = e;
+          } finally {
+            clearTimeout(timeout);
+          }
+          if (attempt < 2) await sleep(250 * Math.pow(2, attempt));
+        }
+
+        if (fallbackData) return { data: fallbackData, fallback: true, error: lastError };
+        throw lastError || new Error("Unable to load products");
+      }
+
+      function showFallbackNotice() {
+        if (!fallbackNotice) {
+          fallbackNotice = document.createElement("p");
+          fallbackNotice.style.cssText = "text-align:center;color:var(--text-muted);font-size:12px;margin:18px auto 0";
+        }
+        fallbackNotice.textContent = "数据服务暂时不可用，当前显示的是内置数据。刷新页面可重试。";
+        container.parentNode.appendChild(fallbackNotice);
+      }
+
+      function clearFallbackNotice() {
+        if (fallbackNotice) fallbackNotice.remove();
+      }
+
+      function applyData(data) {
+        DATA = data;
+
+        var site = DATA.site || {};
+        if (site.title) {
+          document.title = site.title;
+          $("#heroTitle").textContent = site.title;
+        }
+        if (site.subtitle) $("#heroSubtitle").textContent = site.subtitle;
+
+        render();
+        hasRendered = true;
+      }
+
+      function showLoadError() {
+        container.className = "";
+        container.innerHTML =
+          '<div style="text-align:center;padding:80px 24px;color:var(--text-muted);max-width:440px;margin:auto">'
+          +'<div style="font-size:48px;margin-bottom:14px">⚙️</div>'
+          +'<h3 style="color:var(--text-soft);margin-bottom:10px;font-size:18px">暂时无法加载数据</h3>'
+          +'<p style="font-size:14px;line-height:1.7">数据服务暂时不可用，请稍后重试。</p>'
+          +'<button id="retryLoad" type="button" style="margin-top:20px;padding:9px 18px;border:1px solid var(--border-strong);border-radius:10px;background:var(--bg-elevated);font:inherit;color:var(--text-soft)">重新加载</button>'
+          +'</div>';
+        $("#retryLoad").addEventListener("click", init);
       }
 
       /* ──── 渲染 ──── */
@@ -559,31 +680,17 @@
 
       /* ──── 加载 ──── */
       async function init() {
+        // 先展示内置快照，网络请求在后台重试，避免接口抖动导致首屏空白。
+        if (fallbackData && !hasRendered) applyData(fallbackData);
+
         try {
-          var res = await fetch("products.json", { cache: "no-cache" });
-          if (!res.ok) throw new Error(res.status);
-          DATA = await res.json();
+          var result = await loadData();
+          applyData(result.data);
+          if (result.fallback) showFallbackNotice();
+          else clearFallbackNotice();
         } catch(e) {
-          container.className = ""; container.innerHTML =
-            '<div style="text-align:center;padding:80px 24px;color:var(--text-muted);max-width:440px;margin:auto">'
-            +'<div style="font-size:48px;margin-bottom:14px">⚙️</div>'
-            +'<h3 style="color:var(--text-soft);margin-bottom:10px;font-size:18px">无法加载数据</h3>'
-            +'<p style="font-size:14px;line-height:1.7">直接双击打开 HTML 时浏览器会阻止读取本地 JSON。<br><br>'
-            +'请在项目目录运行本地服务：<br><br>'
-            +'<code style="display:inline-block;padding:10px 18px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;font-size:13.5px">python3 -m http.server 8080</code>'
-            +'<br><br>然后访问 <code>http://localhost:8080</code></p></div>';
-          return;
+          if (!hasRendered) showLoadError();
         }
-
-        // 应用站点配置
-        var site = DATA.site || {};
-        if (site.title) {
-          document.title = site.title;
-          $("#heroTitle").textContent = site.title;
-        }
-        if (site.subtitle) $("#heroSubtitle").textContent = site.subtitle;
-
-        render();
       }
 
       init();
